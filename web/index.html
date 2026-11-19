@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClipGenius AI — Web Studio & Social Automation SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Desktop Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">CG</div>
+        <div>
+          <div class="brand-title">ClipGenius AI</div>
+          <div class="brand-sub">WEB STUDIO SAAS</div>
+        </div>
+      </div>
+
+      <nav class="nav-list" id="desktopNav">
+        <button class="nav-btn active" data-tab="studio">⚡ AI Clip Studio</button>
+        <button class="nav-btn" data-tab="clips">🎬 Viral Clips</button>
+        <button class="nav-btn" data-tab="publish">🚀 Publish Hub</button>
+        <button class="nav-btn" data-tab="plans">💎 Plans & Billing</button>
+        <button class="nav-btn" data-tab="admin" id="adminNavBtn">🛡️ Admin Panel</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="mode-badge" id="runtimeModeBadge">● LIVE BRIDGE SYNC</div>
+        <div style="font-size:13px;font-weight:700" id="sidebarUserName">Creator Studio</div>
+        <div class="muted" id="sidebarPlanLabel">FREE • 720p</div>
+        <div class="quota-bar"><div class="quota-fill" id="sidebarQuotaFill" style="width:0%"></div></div>
+        <div class="mono" style="margin-top:6px;color:var(--cyan)" id="sidebarQuotaText">0 / 3 clips today</div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-area">
+      <!-- Compact Mobile Header -->
+      <div class="top-mobile-bar">
+        <div class="row" style="gap:10px">
+          <div class="brand-mark" style="width:32px;height:32px;font-size:13px">CG</div>
+          <div>
+            <div style="font-size:15px;font-weight:800">ClipGenius Web</div>
+            <div class="mono" style="color:var(--cyan)" id="mobileModeText">LIVE CLOUD SYNC</div>
+          </div>
+        </div>
+        <span class="pill pill-violet" id="mobilePlanPill">FREE</span>
+      </div>
+
+      <div class="mobile-tabs" id="mobileNav">
+        <button class="mobile-tab active" data-tab="studio">⚡ Studio</button>
+        <button class="mobile-tab" data-tab="clips">🎬 Clips</button>
+        <button class="mobile-tab" data-tab="publish">🚀 Publish</button>
+        <button class="mobile-tab" data-tab="plans">💎 Plans</button>
+        <button class="mobile-tab" data-tab="admin">🛡️ Admin</button>
+      </div>
+
+      <!-- TAB 1: STUDIO -->
+      <section id="tab-studio" class="stack">
+        <div class="glass-card accent stack">
+          <div class="row between">
+            <div>
+              <div class="section-title">Paste Video Link → Viral 9:16 Clips</div>
+              <p class="muted">YouTube URL validation, authorized video upload, Gemini AI viral moment detection, multilingual subtitles & auto-publishing.</p>
+            </div>
+            <span class="pill pill-emerald" id="studioQuotaPill">0 / 3 TODAY</span>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="youtubeUrlInput">YouTube Video or Shorts URL</label>
+            <input id="youtubeUrlInput" type="url" placeholder="https://www.youtube.com/watch?v=..." />
+          </div>
+
+          <div class="row">
+            <button class="btn btn-cyan" id="validateUrlBtn" style="flex:1">🔗 Validate YouTube URL</button>
+            <button class="btn btn-ig" id="uploadVideoBtn" style="flex:1">📁 Upload Authorized Video</button>
+            <input id="browserFileInput" type="file" accept="video/*" class="hidden" />
+          </div>
+
+          <div id="inspectedBox" class="inspected-preview hidden">
+            <img id="inspectedThumb" class="inspected-thumb" alt="Video preview" />
+            <div style="flex:1;min-width:0">
+              <div id="inspectedTitle" style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+              <div id="inspectedMeta" class="mono" style="color:var(--emerald);margin-top:3px"></div>
+            </div>
+            <button class="btn btn-sm btn-danger" id="clearInspectedBtn">✕</button>
+          </div>
+
+          <div id="pipelineErrorBox" class="glass-card hidden" style="border-color:var(--crimson);padding:12px;color:var(--crimson);font-size:13px"></div>
+        </div>
+
+        <div class="glass-card stack">
+          <div class="card-title">AI Clipping, Subtitles & Automation Controls</div>
+          <div class="grid-2">
+            <div class="input-group">
+              <label class="input-label">Clips to Generate: <span id="clipCountLabel" class="mono" style="color:var(--cyan)">3 Clips</span></label>
+              <input id="clipCountRange" type="range" min="1" max="20" value="3" />
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="creatorNotesInput">Focus Notes / Hook Topic (Optional)</label>
+              <input id="creatorNotesInput" type="text" placeholder="e.g. Emotional quotes, podcast tips, Hindi hooks" />
+            </div>
+          </div>
+
+          <div>
+            <div class="input-label" style="margin-bottom:6px">Primary Subtitle Language (EN + HI + Hinglish generated)</div>
+            <div class="chip-row" id="langChips">
+              <button class="chip" data-lang="ENGLISH">EN • English</button>
+              <button class="chip" data-lang="HINDI">HI • Hindi (हिंदी)</button>
+              <button class="chip selected" data-lang="HINGLISH">HI-EN • Hinglish</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="input-label" style="margin-bottom:6px">Animated Caption Style</div>
+            <div class="chip-row" id="styleChips">
+              <button class="chip selected" data-style="NEON_POP">Neon Pop</button>
+              <button class="chip" data-style="BOLD_BOX">Bold Box</button>
+              <button class="chip" data-style="MINIMAL_GLASS">Minimal Glass</button>
+              <button class="chip" data-style="KARAOKE_GLOW">Karaoke Glow</button>
+            </div>
+          </div>
+
+          <label class="row" style="cursor:pointer">
+            <input type="checkbox" id="autoPublishCheckbox" />
+            <span style="font-size:13px">Explicitly enable Auto-Publish Queue to connected accounts (Pro / Premium)</span>
+          </label>
+
+          <button class="btn btn-primary" id="runPipelineBtn">✨ Analyze & Auto-Generate Viral Clips</button>
+        </div>
+
+        <!-- Live Progress -->
+        <div id="pipelineProgressCard" class="glass-card accent stack hidden">
+          <div class="row between">
+            <div id="pipelineStepText" style="font-weight:700;font-size:14px">Analyzing video...</div>
+            <div id="pipelinePctText" class="mono" style="color:var(--cyan)">0%</div>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="pipelineProgressFill" style="width:0%"></div></div>
+        </div>
+
+        <!-- Recent Projects -->
+        <div class="stack">
+          <div class="row between">
+            <div class="card-title">Recent Video Projects</div>
+            <span class="pill pill-cyan" id="projectsCountPill">0 PROJECTS</span>
+          </div>
+          <div id="projectsList" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- TAB 2: CLIPS & 9:16 EDITOR -->
+      <section id="tab-clips" class="stack hidden">
+        <div id="clipsListView" class="stack">
+          <div class="row between">
+            <div>
+              <div class="section-title">Viral Clips Library</div>
+              <p class="muted">Click any clip to launch the 9:16 Vertical Studio, edit EN/HI/Hinglish subtitles, render MP4, or publish.</p>
+            </div>
+            <input id="clipSearchInput" type="text" placeholder="Search clips..." style="max-width:240px" />
+          </div>
+
+          <div class="grid-3">
+            <div class="metric-tile">
+              <div class="muted">Total Clips</div>
+              <div class="metric-val" id="metricTotalClips">0</div>
+            </div>
+            <div class="metric-tile">
+              <div class="muted">9:16 Rendered</div>
+              <div class="metric-val" style="color:var(--cyan)" id="metricRenderedClips">0</div>
+            </div>
+            <div class="metric-tile">
+              <div class="muted">Published</div>
+              <div class="metric-val" style="color:var(--emerald)" id="metricPublishedClips">0</div>
+            </div>
+          </div>
+
+          <div id="clipsGrid" class="grid-2"></div>
+        </div>
+
+        <!-- Inline 9:16 Clip Editor -->
+        <div id="clipEditorView" class="stack hidden">
+          <div class="row between">
+            <button class="btn btn-sm" id="backToClipsBtn">← Back to Clips</button>
+            <div class="row">
+              <button class="btn btn-sm btn-cyan" id="openNativeEditorBtn">📱 Native Media3 Studio</button>
+              <button class="btn btn-sm btn-primary" id="saveClipEditsBtn">💾 Save Edits</button>
+            </div>
+          </div>
+
+          <div class="editor-layout">
+            <div class="stack" style="align-items:center">
+              <div class="vertical-stage">
+                <video id="editorVideoEl" playsinline loop muted class="hidden"></video>
+                <div class="stage-top-bar">
+                  <span class="pill pill-cyan" id="stageResBadge">9:16 • 1080p</span>
+                  <span class="pill pill-emerald" id="stageScoreBadge">92 VIRAL</span>
+                </div>
+                <div class="caption-box NEON_POP" id="liveCaptionBox"></div>
+              </div>
+              <div class="row" style="width:100%;max-width:290px">
+                <button class="btn btn-sm btn-cyan" id="renderClipWebBtn" style="flex:1">🎬 Render 9:16</button>
+                <button class="btn btn-sm btn-primary" id="publishClipWebBtn" style="flex:1">🚀 Publish</button>
+              </div>
+              <div id="editorRenderProgress" class="progress-track hidden" style="max-width:290px">
+                <div class="progress-fill" id="editorRenderFill" style="width:0%"></div>
+              </div>
+            </div>
+
+            <div class="glass-card stack">
+              <div class="row between">
+                <div class="card-title">Subtitles, Viral Titles & SEO Studio</div>
+                <button class="btn btn-sm" id="aiRemixClipBtn">✨ AI Remix</button>
+              </div>
+
+              <div class="chip-row" id="editorLangChips">
+                <button class="chip" data-elang="ENGLISH">English</button>
+                <button class="chip" data-elang="HINDI">Hindi (हिंदी)</button>
+                <button class="chip" data-elang="HINGLISH">Hinglish</button>
+              </div>
+
+              <div class="chip-row" id="editorStyleChips">
+                <button class="chip" data-estyle="NEON_POP">Neon Pop</button>
+                <button class="chip" data-estyle="BOLD_BOX">Bold Box</button>
+                <button class="chip" data-estyle="MINIMAL_GLASS">Minimal Glass</button>
+                <button class="chip" data-estyle="KARAOKE_GLOW">Karaoke Glow</button>
+              </div>
+
+              <div class="input-group">
+                <label class="input-label">Synchronized Subtitle Script</label>
+                <textarea id="editorSubtitleArea" rows="3"></textarea>
+              </div>
+              <div class="input-group">
+                <label class="input-label">Viral Short Title</label>
+                <input id="editorTitleInput" type="text" />
+              </div>
+              <div class="input-group">
+                <label class="input-label">SEO Description</label>
+                <textarea id="editorSeoArea" rows="2"></textarea>
+              </div>
+              <div class="grid-2">
+                <div class="input-group">
+                  <label class="input-label">YouTube Shorts Caption</label>
+                  <textarea id="editorYtCaption" rows="2"></textarea>
+                </div>
+                <div class="input-group">
+                  <label class="input-label">Instagram Reels Caption</label>
+                  <textarea id="editorIgCaption" rows="2"></textarea>
+                </div>
+              </div>
+              <div class="row">
+                <button class="btn btn-sm btn-yt" id="copyYtBtn">Copy YT Metadata</button>
+                <button class="btn btn-sm btn-ig" id="copyIgBtn">Copy IG Metadata</button>
+                <button class="btn btn-sm btn-yt" id="quickPublishYtBtn">Publish YT Short</button>
+                <button class="btn btn-sm btn-ig" id="quickPublishIgBtn">Publish IG Reel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: PUBLISH HUB -->
+      <section id="tab-publish" class="stack hidden">
+        <div class="glass-card stack">
+          <div class="section-title">Connected Social Accounts</div>
+          <p class="muted">Multi-account YouTube & Instagram publishing via OAuth metadata and secure platform handoff. Passwords are never stored.</p>
+
+          <div class="grid-2">
+            <div class="input-group">
+              <label class="input-label">Platform</label>
+              <select id="connectPlatformSelect">
+                <option value="YOUTUBE">YouTube Shorts</option>
+                <option value="INSTAGRAM">Instagram Reels</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label class="input-label">Handle (@channel)</label>
+              <input id="connectHandleInput" type="text" placeholder="@yourchannel" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Display Name</label>
+              <input id="connectNameInput" type="text" placeholder="Creator Studio" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Default Privacy</label>
+              <select id="connectPrivacySelect">
+                <option value="PUBLIC">Public</option>
+                <option value="UNLISTED">Unlisted</option>
+                <option value="PRIVATE">Private</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="connectAccountBtn">🔗 Connect Social Account</button>
+        </div>
+
+        <div id="accountsList" class="grid-2"></div>
+
+        <div class="stack">
+          <div class="card-title">Publishing Queue & Upload History</div>
+          <div id="publishJobsList" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SUBSCRIPTIONS -->
+      <section id="tab-plans" class="stack hidden">
+        <div class="section-title">Subscription Plans</div>
+        <p class="muted">Scale your daily AI clips, Full HD 1080p 60fps exports, multi-account publishing, and priority processing.</p>
+        <div class="grid-3" id="plansGrid"></div>
+      </section>
+
+      <!-- TAB 5: ADMIN PANEL -->
+      <section id="tab-admin" class="stack hidden">
+        <div class="section-title">Admin Control & Telemetry Dashboard</div>
+        <div class="grid-3">
+          <div class="metric-tile">
+            <div class="muted">Active Users</div>
+            <div class="metric-val" id="adminUsersCount">0</div>
+          </div>
+          <div class="metric-tile">
+            <div class="muted">AI / Publish Events</div>
+            <div class="metric-val" style="color:var(--cyan)" id="adminLogsCount">0</div>
+          </div>
+          <div class="metric-tile">
+            <div class="muted">Failed Jobs</div>
+            <div class="metric-val" style="color:var(--crimson)" id="adminFailedCount">0</div>
+          </div>
+        </div>
+
+        <div id="adminConfigCard" class="glass-card accent stack">
+          <div class="card-title">Global Limits & AI Configuration</div>
+          <div class="grid-3">
+            <div class="input-group">
+              <label class="input-label">Free Clips/Day</label>
+              <input id="cfgFreeLimit" type="number" value="3" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Pro Clips/Day</label>
+              <input id="cfgProLimit" type="number" value="20" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Premium Clips/Day</label>
+              <input id="cfgPremLimit" type="number" value="100" />
+            </div>
+          </div>
+          <div class="grid-3">
+            <div class="input-group">
+              <label class="input-label">Max Video (min)</label>
+              <input id="cfgMaxMin" type="number" value="60" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Storage Quota (GB)</label>
+              <input id="cfgStorageGb" type="number" value="500" />
+            </div>
+            <div class="input-group">
+              <label class="input-label">Active Gemini Model</label>
+              <input id="cfgModelName" type="text" value="gemini-3.8-flash" />
+            </div>
+          </div>
+          <button class="btn btn-primary" id="saveAdminConfigBtn">💾 Save Global System Config</button>
+        </div>
+
+        <div id="adminUsersSection" class="stack">
+          <div class="card-title">Users & Subscriptions</div>
+          <div id="adminUsersList" class="stack"></div>
+        </div>
+
+        <div class="stack">
+          <div class="card-title">AI Processing & Upload History Logs</div>
+          <div id="adminLogsList" class="stack"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toastEl"></div>
+  <script src="app.js"></script>
+</body>
+</html>
