@@ -1,0 +1,317 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HARDENED HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email == 'maansinghyadav095@gmail.com' &&
+         request.auth.token.email_verified == true)
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isBoundedStringList(arr, maxLen) {
+      return arr is list && arr.size() <= maxLen && (arr.size() == 0 || arr[0] is string);
+    }
+
+    // --- ENTITY VALIDATION BLUEPRINTS ---
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+        data.email is string && data.email.size() <= 200 &&
+        (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+        data.planTier in ['FREE', 'PRO', 'PREMIUM'] &&
+        data.dailyClipsUsed is int && data.dailyClipsUsed >= 0 && data.dailyClipsUsed <= 1000 &&
+        data.dailyClipLimit is int && data.dailyClipLimit >= 1 && data.dailyClipLimit <= 1000 &&
+        data.autoPublishEnabled is bool &&
+        data.preferredSubtitleLang in ['ENGLISH', 'HINDI', 'HINGLISH'] &&
+        data.preferredCaptionStyle in ['NEON_POP', 'BOLD_BOX', 'MINIMAL_GLASS', 'KARAOKE_GLOW'] &&
+        data.totalClipsGenerated is int && data.totalClipsGenerated >= 0 && data.totalClipsGenerated <= 100000 &&
+        data.totalPublished is int && data.totalPublished >= 0 && data.totalPublished <= 100000 &&
+        data.storageUsedMb is number && data.storageUsedMb >= 0 && data.storageUsedMb <= 100000;
+    }
+
+    function isValidVideoProject(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+        data.sourceType in ['YOUTUBE_URL', 'LOCAL_VIDEO'] &&
+        data.sourceUrl is string && data.sourceUrl.size() <= 1000 &&
+        data.channelName is string && data.channelName.size() <= 150 &&
+        data.thumbnailUrl is string && data.thumbnailUrl.size() <= 1000 &&
+        data.durationSeconds is int && data.durationSeconds >= 0 && data.durationSeconds <= 86400 &&
+        data.resolutionLabel is string && data.resolutionLabel.size() <= 40 &&
+        data.status in ['QUEUED', 'ANALYZING', 'CLIPPING', 'READY', 'FAILED'] &&
+        data.progressPercent is int && data.progressPercent >= 0 && data.progressPercent <= 100 &&
+        data.currentStage is string && data.currentStage.size() <= 160 &&
+        data.transcript is string && data.transcript.size() <= 40000 &&
+        data.summary is string && data.summary.size() <= 2000 &&
+        data.clipCount is int && data.clipCount >= 0 && data.clipCount <= 50 &&
+        (!('errorMessage' in data) || data.errorMessage == null || (data.errorMessage is string && data.errorMessage.size() <= 1000));
+    }
+
+    function isValidGeneratedClip(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        isValidId(data.projectId) &&
+        data.projectTitle is string && data.projectTitle.size() <= 200 &&
+        data.sourceUri is string && data.sourceUri.size() <= 1000 &&
+        data.exportedFilePath is string && data.exportedFilePath.size() <= 1000 &&
+        data.startMs is int && data.startMs >= 0 && data.startMs <= 86400000 &&
+        data.endMs is int && data.endMs >= 0 && data.endMs <= 86400000 && data.endMs >= data.startMs &&
+        data.viralScore is int && data.viralScore >= 0 && data.viralScore <= 100 &&
+        data.hookReason is string && data.hookReason.size() <= 500 &&
+        data.emotionTag is string && data.emotionTag.size() <= 60 &&
+        data.viralTitle is string && data.viralTitle.size() >= 1 && data.viralTitle.size() <= 200 &&
+        data.seoDescription is string && data.seoDescription.size() <= 2500 &&
+        data.youtubeCaption is string && data.youtubeCaption.size() <= 2000 &&
+        data.instagramCaption is string && data.instagramCaption.size() <= 2200 &&
+        data.thumbnailConcept is string && data.thumbnailConcept.size() <= 500 &&
+        isBoundedStringList(data.hashtags, 20) &&
+        isBoundedStringList(data.keywords, 20) &&
+        data.subtitleLanguage in ['ENGLISH', 'HINDI', 'HINGLISH'] &&
+        data.captionStyle in ['NEON_POP', 'BOLD_BOX', 'MINIMAL_GLASS', 'KARAOKE_GLOW'] &&
+        data.subtitleEn is string && data.subtitleEn.size() <= 4000 &&
+        data.subtitleHi is string && data.subtitleHi.size() <= 4000 &&
+        data.subtitleHinglish is string && data.subtitleHinglish.size() <= 4000 &&
+        data.aspectRatio is string && data.aspectRatio.size() <= 16 &&
+        data.exportResolution in ['720p', '1080p'] &&
+        data.exportFps is int && data.exportFps >= 24 && data.exportFps <= 60 &&
+        data.faceTrackingEnabled is bool &&
+        data.speakerTrackingEnabled is bool &&
+        data.dynamicZoomEnabled is bool &&
+        data.noiseReductionEnabled is bool &&
+        data.audioNormalized is bool &&
+        data.transitionStyle in ['SMOOTH_CUT', 'ZOOM_PUNCH', 'WHIP_PAN', 'FADE_GLOW'] &&
+        data.renderStatus in ['PENDING', 'RENDERING', 'RENDERED', 'FAILED'] &&
+        data.publishStatus in ['DRAFT', 'SCHEDULED', 'PUBLISHED', 'FAILED'] &&
+        data.scheduledTimeIso is string && data.scheduledTimeIso.size() <= 60;
+    }
+
+    function isValidConnectedAccount(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.platform in ['YOUTUBE', 'INSTAGRAM'] &&
+        data.handle is string && data.handle.size() >= 1 && data.handle.size() <= 120 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120 &&
+        data.channelOrAccountId is string && data.channelOrAccountId.size() <= 200 &&
+        data.privacyDefault in ['PUBLIC', 'UNLISTED', 'PRIVATE'] &&
+        data.autoPublish is bool &&
+        data.connectedStatus in ['CONNECTED', 'REAUTH_REQUIRED'];
+    }
+
+    function isValidPublishJob(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        isValidId(data.clipId) &&
+        data.clipTitle is string && data.clipTitle.size() >= 1 && data.clipTitle.size() <= 200 &&
+        data.platform in ['YOUTUBE', 'INSTAGRAM'] &&
+        data.accountHandle is string && data.accountHandle.size() >= 1 && data.accountHandle.size() <= 120 &&
+        data.privacy in ['PUBLIC', 'UNLISTED', 'PRIVATE'] &&
+        data.status in ['QUEUED', 'UPLOADING', 'SCHEDULED', 'PUBLISHED', 'FAILED'] &&
+        data.scheduledFor is string && data.scheduledFor.size() <= 60 &&
+        data.platformPostUrl is string && data.platformPostUrl.size() <= 500 &&
+        data.errorMessage is string && data.errorMessage.size() <= 1000;
+    }
+
+    function isValidSystemConfig(data) {
+      return data.freeDailyLimit is int && data.freeDailyLimit >= 1 && data.freeDailyLimit <= 50 &&
+        data.proDailyLimit is int && data.proDailyLimit >= 1 && data.proDailyLimit <= 200 &&
+        data.premiumDailyLimit is int && data.premiumDailyLimit >= 1 && data.premiumDailyLimit <= 1000 &&
+        data.maxVideoDurationMinutes is int && data.maxVideoDurationMinutes >= 1 && data.maxVideoDurationMinutes <= 240 &&
+        data.aiModelName is string && data.aiModelName.size() >= 1 && data.aiModelName.size() <= 100 &&
+        data.autoPublishGlobalEnabled is bool &&
+        data.storageQuotaGb is int && data.storageQuotaGb >= 1 && data.storageQuotaGb <= 10000;
+    }
+
+    function isValidAdminLog(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.userEmail is string && data.userEmail.size() <= 200 &&
+        data.eventType in ['AI_ANALYSIS', 'CLIP_RENDER', 'SOCIAL_PUBLISH', 'UPLOAD_FAILED', 'PLAN_CHANGE'] &&
+        data.status in ['STARTED', 'COMPLETED', 'FAILED'] &&
+        data.message is string && data.message.size() >= 1 && data.message.size() <= 500 &&
+        data.clipsCount is int && data.clipsCount >= 0 && data.clipsCount <= 100 &&
+        data.durationMs is int && data.durationMs >= 0 && data.durationMs <= 3600000;
+    }
+
+    // --- ADMINS REGISTRY (READ-ONLY FOR CLIENT) ---
+    match /admins/{adminUid} {
+      allow get: if isSignedIn() && isValidId(adminUid) && (isOwner(adminUid) || isAdmin());
+      allow list, create, update, delete: if false;
+    }
+
+    // --- GLOBAL SYSTEM CONFIG ---
+    match /system_config/{configId} {
+      allow get: if isSignedIn() && isValidId(configId);
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(configId) &&
+        isValidSystemConfig(incoming()) &&
+        incoming().keys().hasAll(['freeDailyLimit', 'proDailyLimit', 'premiumDailyLimit', 'maxVideoDurationMinutes', 'aiModelName', 'autoPublishGlobalEnabled', 'storageQuotaGb', 'updatedAt']) &&
+        incoming().keys().hasOnly(['freeDailyLimit', 'proDailyLimit', 'premiumDailyLimit', 'maxVideoDurationMinutes', 'aiModelName', 'autoPublishGlobalEnabled', 'storageQuotaGb', 'updatedAt']) &&
+        isValidTimestamp(incoming().updatedAt);
+      allow update: if isAdmin() && isValidId(configId) &&
+        isValidSystemConfig(incoming()) &&
+        isValidTimestamp(incoming().updatedAt) &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['freeDailyLimit', 'proDailyLimit', 'premiumDailyLimit', 'maxVideoDurationMinutes', 'aiModelName', 'autoPublishGlobalEnabled', 'storageQuotaGb', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // --- PROCESSING & PUBLISH TELEMETRY LOGS ---
+    match /admin_logs/{logId} {
+      allow get: if isSignedIn() && isValidId(logId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(logId) &&
+        isValidAdminLog(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().keys().hasAll(['userId', 'userEmail', 'eventType', 'status', 'message', 'clipsCount', 'durationMs', 'createdAt']) &&
+        incoming().keys().hasOnly(['userId', 'userEmail', 'eventType', 'status', 'message', 'clipsCount', 'durationMs', 'createdAt']) &&
+        isValidTimestamp(incoming().createdAt);
+      allow update, delete: if isAdmin() && isValidId(logId);
+    }
+
+    // --- USERS & NESTED CREATOR RESOURCES ---
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isValidId(userId) && isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().keys().hasAll(['userId', 'displayName', 'email', 'planTier', 'dailyClipsUsed', 'dailyClipLimit', 'autoPublishEnabled', 'preferredSubtitleLang', 'preferredCaptionStyle', 'totalClipsGenerated', 'totalPublished', 'storageUsedMb', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly(['userId', 'displayName', 'email', 'photoUrl', 'planTier', 'dailyClipsUsed', 'dailyClipLimit', 'autoPublishEnabled', 'preferredSubtitleLang', 'preferredCaptionStyle', 'totalClipsGenerated', 'totalPublished', 'storageUsedMb', 'createdAt', 'updatedAt']) &&
+        isValidTimestamp(incoming().createdAt) &&
+        isValidTimestamp(incoming().updatedAt);
+      allow update: if isSignedIn() && isValidId(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        isValidTimestamp(incoming().updatedAt) &&
+        (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoUrl', 'planTier', 'dailyClipsUsed', 'dailyClipLimit', 'autoPublishEnabled', 'preferredSubtitleLang', 'preferredCaptionStyle', 'totalClipsGenerated', 'totalPublished', 'storageUsedMb', 'updatedAt'])) ||
+          (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoUrl', 'planTier', 'dailyClipsUsed', 'dailyClipLimit', 'autoPublishEnabled', 'preferredSubtitleLang', 'preferredCaptionStyle', 'totalClipsGenerated', 'totalPublished', 'storageUsedMb', 'updatedAt']))
+        );
+      allow delete: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+
+      // --- VIDEO PROJECTS SUBCOLLECTION ---
+      match /projects/{projectId} {
+        allow get: if isSignedIn() && isValidId(projectId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && (isOwner(userId) || isAdmin());
+        allow create: if isSignedIn() && isValidId(projectId) && isOwner(userId) &&
+          isValidVideoProject(incoming()) &&
+          incoming().userId == request.auth.uid &&
+          incoming().keys().hasAll(['userId', 'title', 'sourceType', 'sourceUrl', 'channelName', 'thumbnailUrl', 'durationSeconds', 'resolutionLabel', 'status', 'progressPercent', 'currentStage', 'transcript', 'summary', 'clipCount', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'title', 'sourceType', 'sourceUrl', 'channelName', 'thumbnailUrl', 'durationSeconds', 'resolutionLabel', 'status', 'progressPercent', 'currentStage', 'transcript', 'summary', 'clipCount', 'errorMessage', 'createdAt', 'updatedAt']) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt);
+        allow update: if isSignedIn() && isValidId(projectId) &&
+          isValidVideoProject(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          (
+            isAdmin() ||
+            (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'channelName', 'thumbnailUrl', 'durationSeconds', 'resolutionLabel', 'status', 'progressPercent', 'currentStage', 'transcript', 'summary', 'clipCount', 'errorMessage', 'updatedAt']))
+          );
+        allow delete: if isSignedIn() && isValidId(projectId) && (isOwner(userId) || isAdmin());
+      }
+
+      // --- GENERATED CLIPS SUBCOLLECTION ---
+      match /clips/{clipId} {
+        allow get: if isSignedIn() && isValidId(clipId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && (isOwner(userId) || isAdmin());
+        allow create: if isSignedIn() && isValidId(clipId) && isOwner(userId) &&
+          isValidGeneratedClip(incoming()) &&
+          incoming().userId == request.auth.uid &&
+          incoming().keys().hasAll(['userId', 'projectId', 'projectTitle', 'sourceUri', 'exportedFilePath', 'startMs', 'endMs', 'viralScore', 'hookReason', 'emotionTag', 'viralTitle', 'seoDescription', 'youtubeCaption', 'instagramCaption', 'thumbnailConcept', 'hashtags', 'keywords', 'subtitleLanguage', 'captionStyle', 'subtitleEn', 'subtitleHi', 'subtitleHinglish', 'aspectRatio', 'exportResolution', 'exportFps', 'faceTrackingEnabled', 'speakerTrackingEnabled', 'dynamicZoomEnabled', 'noiseReductionEnabled', 'audioNormalized', 'transitionStyle', 'renderStatus', 'publishStatus', 'scheduledTimeIso', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'projectId', 'projectTitle', 'sourceUri', 'exportedFilePath', 'startMs', 'endMs', 'viralScore', 'hookReason', 'emotionTag', 'viralTitle', 'seoDescription', 'youtubeCaption', 'instagramCaption', 'thumbnailConcept', 'hashtags', 'keywords', 'subtitleLanguage', 'captionStyle', 'subtitleEn', 'subtitleHi', 'subtitleHinglish', 'aspectRatio', 'exportResolution', 'exportFps', 'faceTrackingEnabled', 'speakerTrackingEnabled', 'dynamicZoomEnabled', 'noiseReductionEnabled', 'audioNormalized', 'transitionStyle', 'renderStatus', 'publishStatus', 'scheduledTimeIso', 'createdAt', 'updatedAt']) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          existsAfter(/databases/$(database)/documents/users/$(userId)/projects/$(incoming().projectId));
+        allow update: if isSignedIn() && isValidId(clipId) &&
+          isValidGeneratedClip(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().projectId == existing().projectId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          (
+            isAdmin() ||
+            (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['sourceUri', 'exportedFilePath', 'startMs', 'endMs', 'viralTitle', 'seoDescription', 'youtubeCaption', 'instagramCaption', 'thumbnailConcept', 'hashtags', 'keywords', 'subtitleLanguage', 'captionStyle', 'subtitleEn', 'subtitleHi', 'subtitleHinglish', 'exportResolution', 'exportFps', 'faceTrackingEnabled', 'speakerTrackingEnabled', 'dynamicZoomEnabled', 'noiseReductionEnabled', 'audioNormalized', 'transitionStyle', 'renderStatus', 'publishStatus', 'scheduledTimeIso', 'updatedAt']))
+          );
+        allow delete: if isSignedIn() && isValidId(clipId) && (isOwner(userId) || isAdmin());
+      }
+
+      // --- CONNECTED SOCIAL ACCOUNTS SUBCOLLECTION ---
+      match /social_accounts/{accountId} {
+        allow get: if isSignedIn() && isValidId(accountId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && (isOwner(userId) || isAdmin());
+        allow create: if isSignedIn() && isValidId(accountId) && isOwner(userId) &&
+          isValidConnectedAccount(incoming()) &&
+          incoming().userId == request.auth.uid &&
+          incoming().keys().hasAll(['userId', 'platform', 'handle', 'displayName', 'channelOrAccountId', 'privacyDefault', 'autoPublish', 'connectedStatus', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'platform', 'handle', 'displayName', 'channelOrAccountId', 'privacyDefault', 'autoPublish', 'connectedStatus', 'createdAt', 'updatedAt']) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt);
+        allow update: if isSignedIn() && isValidId(accountId) &&
+          isValidConnectedAccount(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().platform == existing().platform &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          (
+            isAdmin() ||
+            (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['handle', 'displayName', 'channelOrAccountId', 'privacyDefault', 'autoPublish', 'connectedStatus', 'updatedAt']))
+          );
+        allow delete: if isSignedIn() && isValidId(accountId) && (isOwner(userId) || isAdmin());
+      }
+
+      // --- PUBLISH JOBS SUBCOLLECTION ---
+      match /publish_jobs/{jobId} {
+        allow get: if isSignedIn() && isValidId(jobId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && (isOwner(userId) || isAdmin());
+        allow create: if isSignedIn() && isValidId(jobId) && isOwner(userId) &&
+          isValidPublishJob(incoming()) &&
+          incoming().userId == request.auth.uid &&
+          incoming().keys().hasAll(['userId', 'clipId', 'clipTitle', 'platform', 'accountHandle', 'privacy', 'status', 'scheduledFor', 'platformPostUrl', 'errorMessage', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'clipId', 'clipTitle', 'platform', 'accountHandle', 'privacy', 'status', 'scheduledFor', 'platformPostUrl', 'errorMessage', 'createdAt', 'updatedAt']) &&
+          isValidTimestamp(incoming().createdAt) &&
+          isValidTimestamp(incoming().updatedAt) &&
+          existsAfter(/databases/$(database)/documents/users/$(userId)/clips/$(incoming().clipId));
+        allow update: if isSignedIn() && isValidId(jobId) &&
+          isValidPublishJob(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().clipId == existing().clipId &&
+          incoming().createdAt == existing().createdAt &&
+          isValidTimestamp(incoming().updatedAt) &&
+          (
+            isAdmin() ||
+            (isOwner(userId) && existing().status != 'PUBLISHED' && incoming().diff(existing()).affectedKeys().hasOnly(['privacy', 'status', 'scheduledFor', 'platformPostUrl', 'errorMessage', 'updatedAt']))
+          );
+        allow delete: if isSignedIn() && isValidId(jobId) && (isOwner(userId) || isAdmin());
+      }
+    }
+  }
+}

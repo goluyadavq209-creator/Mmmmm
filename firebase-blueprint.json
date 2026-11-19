@@ -1,0 +1,196 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated ClipGenius AI creator profile, subscription plan, daily clip quotas, and editing preferences.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user." },
+        "displayName": { "type": "string", "description": "Creator display name." },
+        "email": { "type": "string", "description": "Creator email address." },
+        "photoUrl": { "type": "string", "description": "Optional avatar URL." },
+        "planTier": { "type": "string", "enum": ["FREE", "PRO", "PREMIUM"], "description": "Subscription tier." },
+        "dailyClipsUsed": { "type": "integer", "description": "Clips generated today." },
+        "dailyClipLimit": { "type": "integer", "description": "Maximum daily clips allowed for plan." },
+        "autoPublishEnabled": { "type": "boolean", "description": "Whether explicit auto-publish is enabled." },
+        "preferredSubtitleLang": { "type": "string", "enum": ["ENGLISH", "HINDI", "HINGLISH"], "description": "Default subtitle language." },
+        "preferredCaptionStyle": { "type": "string", "enum": ["NEON_POP", "BOLD_BOX", "MINIMAL_GLASS", "KARAOKE_GLOW"], "description": "Default animated caption style." },
+        "totalClipsGenerated": { "type": "integer", "description": "Lifetime clips created." },
+        "totalPublished": { "type": "integer", "description": "Lifetime clips published." },
+        "storageUsedMb": { "type": "number", "description": "Estimated storage used in MB." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of account creation (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last update (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "displayName", "email", "planTier", "dailyClipsUsed", "dailyClipLimit", "autoPublishEnabled", "preferredSubtitleLang", "preferredCaptionStyle", "totalClipsGenerated", "totalPublished", "storageUsedMb", "createdAt", "updatedAt"]
+    },
+    "VideoProject": {
+      "title": "VideoProject",
+      "description": "An ingested YouTube URL or authorized local video source undergoing AI analysis and clipping.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "title": { "type": "string", "description": "Video title." },
+        "sourceType": { "type": "string", "enum": ["YOUTUBE_URL", "LOCAL_VIDEO"], "description": "Input source type." },
+        "sourceUrl": { "type": "string", "description": "YouTube URL or local authorized video URI." },
+        "channelName": { "type": "string", "description": "Creator or channel name." },
+        "thumbnailUrl": { "type": "string", "description": "Thumbnail URL if available." },
+        "durationSeconds": { "type": "integer", "description": "Detected video duration in seconds." },
+        "resolutionLabel": { "type": "string", "description": "Source video resolution label." },
+        "status": { "type": "string", "enum": ["QUEUED", "ANALYZING", "CLIPPING", "READY", "FAILED"], "description": "Processing pipeline status." },
+        "progressPercent": { "type": "integer", "description": "Current processing progress 0..100." },
+        "currentStage": { "type": "string", "description": "Human-readable active pipeline step." },
+        "transcript": { "type": "string", "description": "AI-generated full transcript." },
+        "summary": { "type": "string", "description": "AI content summary." },
+        "clipCount": { "type": "integer", "description": "Total viral clips generated." },
+        "errorMessage": { "type": "string", "description": "Optional failure reason." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of update (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "title", "sourceType", "sourceUrl", "channelName", "thumbnailUrl", "durationSeconds", "resolutionLabel", "status", "progressPercent", "currentStage", "transcript", "summary", "clipCount", "createdAt", "updatedAt"]
+    },
+    "GeneratedClip": {
+      "title": "GeneratedClip",
+      "description": "AI-selected short-form vertical 9:16 clip with multilingual subtitles, editing effects, and SEO metadata.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "projectId": { "type": "string", "description": "Parent VideoProject document ID." },
+        "projectTitle": { "type": "string", "description": "Parent project title." },
+        "sourceUri": { "type": "string", "description": "Authorized local video content URI for Media3 rendering." },
+        "exportedFilePath": { "type": "string", "description": "Exported vertical 9:16 MP4 URI or path." },
+        "startMs": { "type": "integer", "description": "Clip start timestamp in milliseconds." },
+        "endMs": { "type": "integer", "description": "Clip end timestamp in milliseconds." },
+        "viralScore": { "type": "integer", "description": "AI viral potential score 0..100." },
+        "hookReason": { "type": "string", "description": "Why AI selected this engaging moment." },
+        "emotionTag": { "type": "string", "description": "Detected emotional reaction or topic shift tag." },
+        "viralTitle": { "type": "string", "description": "AI-generated viral short title." },
+        "seoDescription": { "type": "string", "description": "SEO-friendly description." },
+        "youtubeCaption": { "type": "string", "description": "YouTube Shorts optimized caption." },
+        "instagramCaption": { "type": "string", "description": "Instagram Reels optimized caption." },
+        "thumbnailConcept": { "type": "string", "description": "Suggested thumbnail visual direction." },
+        "hashtags": { "type": "array", "description": "Relevant hashtags list." },
+        "keywords": { "type": "array", "description": "SEO keywords list." },
+        "subtitleLanguage": { "type": "string", "enum": ["ENGLISH", "HINDI", "HINGLISH"], "description": "Active subtitle language." },
+        "captionStyle": { "type": "string", "enum": ["NEON_POP", "BOLD_BOX", "MINIMAL_GLASS", "KARAOKE_GLOW"], "description": "Active animated caption style." },
+        "subtitleEn": { "type": "string", "description": "Synchronized English subtitle text." },
+        "subtitleHi": { "type": "string", "description": "Synchronized Hindi subtitle text." },
+        "subtitleHinglish": { "type": "string", "description": "Synchronized Hinglish subtitle text." },
+        "aspectRatio": { "type": "string", "description": "Output aspect ratio (9:16)." },
+        "exportResolution": { "type": "string", "enum": ["720p", "1080p"], "description": "Export resolution." },
+        "exportFps": { "type": "integer", "description": "Export frame rate (30 or 60)." },
+        "faceTrackingEnabled": { "type": "boolean", "description": "Smart face framing toggle." },
+        "speakerTrackingEnabled": { "type": "boolean", "description": "Automatic speaker focus toggle." },
+        "dynamicZoomEnabled": { "type": "boolean", "description": "Dynamic zoom punch effect toggle." },
+        "noiseReductionEnabled": { "type": "boolean", "description": "Audio noise suppression toggle." },
+        "audioNormalized": { "type": "boolean", "description": "Audio loudness normalization toggle." },
+        "transitionStyle": { "type": "string", "enum": ["SMOOTH_CUT", "ZOOM_PUNCH", "WHIP_PAN", "FADE_GLOW"], "description": "Transition effect style." },
+        "renderStatus": { "type": "string", "enum": ["PENDING", "RENDERING", "RENDERED", "FAILED"], "description": "Media3 vertical render state." },
+        "publishStatus": { "type": "string", "enum": ["DRAFT", "SCHEDULED", "PUBLISHED", "FAILED"], "description": "Social publishing status." },
+        "scheduledTimeIso": { "type": "string", "description": "Scheduled publishing timestamp ISO string." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of update (FieldValue.serverTimestamp())." }
+      },
+      "required": ["userId", "projectId", "projectTitle", "sourceUri", "exportedFilePath", "startMs", "endMs", "viralScore", "hookReason", "emotionTag", "viralTitle", "seoDescription", "youtubeCaption", "instagramCaption", "thumbnailConcept", "hashtags", "keywords", "subtitleLanguage", "captionStyle", "subtitleEn", "subtitleHi", "subtitleHinglish", "aspectRatio", "exportResolution", "exportFps", "faceTrackingEnabled", "speakerTrackingEnabled", "dynamicZoomEnabled", "noiseReductionEnabled", "audioNormalized", "transitionStyle", "renderStatus", "publishStatus", "scheduledTimeIso", "createdAt", "updatedAt"]
+    },
+    "ConnectedAccount": {
+      "title": "ConnectedAccount",
+      "description": "Connected YouTube or Instagram publishing account metadata (no passwords stored).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "platform": { "type": "string", "enum": ["YOUTUBE", "INSTAGRAM"], "description": "Target social media platform." },
+        "handle": { "type": "string", "description": "Channel or Instagram handle." },
+        "displayName": { "type": "string", "description": "Account display name." },
+        "channelOrAccountId": { "type": "string", "description": "Official platform channel or IG business ID." },
+        "privacyDefault": { "type": "string", "enum": ["PUBLIC", "UNLISTED", "PRIVATE"], "description": "Default upload visibility." },
+        "autoPublish": { "type": "boolean", "description": "Explicit opt-in for automatic publishing." },
+        "connectedStatus": { "type": "string", "enum": ["CONNECTED", "REAUTH_REQUIRED"], "description": "OAuth connection status." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of connection." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of update." }
+      },
+      "required": ["userId", "platform", "handle", "displayName", "channelOrAccountId", "privacyDefault", "autoPublish", "connectedStatus", "createdAt", "updatedAt"]
+    },
+    "PublishJob": {
+      "title": "PublishJob",
+      "description": "Record of a YouTube Shorts or Instagram Reels upload or scheduled publish task.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "clipId": { "type": "string", "description": "Associated GeneratedClip document ID." },
+        "clipTitle": { "type": "string", "description": "Published clip title." },
+        "platform": { "type": "string", "enum": ["YOUTUBE", "INSTAGRAM"], "description": "Target social platform." },
+        "accountHandle": { "type": "string", "description": "Connected account handle." },
+        "privacy": { "type": "string", "enum": ["PUBLIC", "UNLISTED", "PRIVATE"], "description": "Privacy level." },
+        "status": { "type": "string", "enum": ["QUEUED", "UPLOADING", "SCHEDULED", "PUBLISHED", "FAILED"], "description": "Job status." },
+        "scheduledFor": { "type": "string", "description": "Optional scheduled ISO time." },
+        "platformPostUrl": { "type": "string", "description": "Published URL or share reference." },
+        "errorMessage": { "type": "string", "description": "Error detail if failed." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of update." }
+      },
+      "required": ["userId", "clipId", "clipTitle", "platform", "accountHandle", "privacy", "status", "scheduledFor", "platformPostUrl", "errorMessage", "createdAt", "updatedAt"]
+    },
+    "SystemConfig": {
+      "title": "SystemConfig",
+      "description": "Admin-controlled global processing limits, AI model configuration, and storage caps.",
+      "type": "object",
+      "properties": {
+        "freeDailyLimit": { "type": "integer", "description": "Daily clip limit for Free tier." },
+        "proDailyLimit": { "type": "integer", "description": "Daily clip limit for Pro tier." },
+        "premiumDailyLimit": { "type": "integer", "description": "Daily clip limit for Premium tier." },
+        "maxVideoDurationMinutes": { "type": "integer", "description": "Maximum allowed input video length." },
+        "aiModelName": { "type": "string", "description": "Active Gemini model identifier." },
+        "autoPublishGlobalEnabled": { "type": "boolean", "description": "Global auto-publish switch." },
+        "storageQuotaGb": { "type": "integer", "description": "Platform storage quota in GB." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last config update." }
+      },
+      "required": ["freeDailyLimit", "proDailyLimit", "premiumDailyLimit", "maxVideoDurationMinutes", "aiModelName", "autoPublishGlobalEnabled", "storageQuotaGb", "updatedAt"]
+    },
+    "ProcessingLog": {
+      "title": "ProcessingLog",
+      "description": "Audit and telemetry event for AI processing, rendering, and publishing monitored in the Admin Dashboard.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Actor Firebase Auth UID." },
+        "userEmail": { "type": "string", "description": "Actor email." },
+        "eventType": { "type": "string", "enum": ["AI_ANALYSIS", "CLIP_RENDER", "SOCIAL_PUBLISH", "UPLOAD_FAILED", "PLAN_CHANGE"], "description": "Telemetry event category." },
+        "status": { "type": "string", "enum": ["STARTED", "COMPLETED", "FAILED"], "description": "Event outcome." },
+        "message": { "type": "string", "description": "Summary message." },
+        "clipsCount": { "type": "integer", "description": "Associated clips count." },
+        "durationMs": { "type": "integer", "description": "Operation duration in ms." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp of event." }
+      },
+      "required": ["userId", "userEmail", "eventType", "status", "message", "clipsCount", "durationMs", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Per-user ClipGenius AI profile and subscription quota state."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/VideoProject" },
+      "description": "User's ingested video projects and AI transcripts."
+    },
+    "/users/{userId}/clips/{clipId}": {
+      "schema": { "$ref": "#/entities/GeneratedClip" },
+      "description": "User's AI-generated vertical 9:16 clips and subtitles."
+    },
+    "/users/{userId}/social_accounts/{accountId}": {
+      "schema": { "$ref": "#/entities/ConnectedAccount" },
+      "description": "User's connected YouTube and Instagram account configurations."
+    },
+    "/users/{userId}/publish_jobs/{jobId}": {
+      "schema": { "$ref": "#/entities/PublishJob" },
+      "description": "User's social media publishing queue and history."
+    },
+    "/system_config/{configId}": {
+      "schema": { "$ref": "#/entities/SystemConfig" },
+      "description": "Global platform configuration managed by admins."
+    },
+    "/admin_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ProcessingLog" },
+      "description": "AI processing and upload telemetry logs."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "ClipGenius AI",
+  "description": "AI-powered automatic video clipping, vertical 9:16 editing, multilingual animated subtitles, viral metadata generation, and social media publishing platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

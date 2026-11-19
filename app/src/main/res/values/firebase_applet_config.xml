@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="firestore_database_id" translatable="false">ai-studio-android-clipgeni-5dd54f93-94dd-4c7c-84a5-76bed27e566a</string>
+    <string name="recaptcha_site_key" translatable="false">6Lf6lScuAAAAAHgnGeB7y6Y6mFBCN-NEraaEwUiJ</string>
+</resources>
